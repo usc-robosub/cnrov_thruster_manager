@@ -161,6 +161,25 @@ void ThrusterManager::updateTAM()
   }
 }
 
+Eigen::VectorXd ThrusterManager::solveWrenchPrioritized(const Vector6d &wrench)
+{
+  static Eigen::MatrixXd tamInv{tam.completeOrthogonalDecomposition().pseudoInverse()};
+  if(use_tf())
+  {
+    updateTAM();
+    tamInv = tam.completeOrthogonalDecomposition().pseudoInverse();
+  }
+
+  if(fmin == 0 || fmax == 0)
+  {
+    // no limits declared: nothing to prioritize against
+    tier_scales.fill(1.);
+    return tamInv*wrench;
+  }
+
+  return allocatePrioritized(tamInv, wrench, fmin, fmax, tier_scales);
+}
+
 Eigen::VectorXd ThrusterManager::solveWrench(const Vector6d &wrench)
 {
   static Eigen::MatrixXd tamInv{tam.completeOrthogonalDecomposition().pseudoInverse()};

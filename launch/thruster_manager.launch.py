@@ -13,8 +13,12 @@ thruster_manager_params = {
         "barracuda/thruster_6_joint",
         "barracuda/thruster_7_joint",
     ],
-    "tam.min_thrust": -4.0,
-    "tam.max_thrust": 4.0,
+    # 80% of the 30 A board budget per EE (~6 A/thruster); do not raise without EE.
+    "tam.min_thrust": -15.0,
+    "tam.max_thrust": 20.0,
+    # Priority-tiered saturation (heave > roll/pitch > yaw > surge/sway);
+    # under saturation the sub gives up surge before depth or attitude:
+    #   "priority_allocation": True,
     "control_frame": "barracuda/base_link",
 }
 # create thruster_manager node
