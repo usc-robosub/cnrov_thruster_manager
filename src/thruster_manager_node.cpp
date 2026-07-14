@@ -1,5 +1,6 @@
 #include <thruster_manager/thruster_manager_node.h>
 #include <geometry_msgs/msg/wrench_stamped.hpp>
+#include <algorithm>
 
 using namespace thruster_manager;
 
@@ -19,6 +20,13 @@ ThrusterManagerNode::ThrusterManagerNode(rclcpp::NodeOptions options)
   const auto sub_stamped{declare_parameter("subscribe_stamped", false,
                                            description("If the node should expect WrenchStamped messages instead of Wrench"))};
   const auto control_frame{declare_parameter<std::string>("control_frame", "base_link")};
+
+  priority_allocation = declare_parameter(
+      "priority_allocation", false,
+      description("Allocate the wrench in priority tiers (heave > roll/pitch > yaw > "
+                  "surge/sway): saturation attenuates lower tiers into the remaining "
+                  "per-thruster headroom instead of scaling the whole wrench, so the "
+                  "vehicle gives up surge before depth or attitude. Ignores tam.deadzone."));
 
   // joint names are stored here anyway to sync joint names and indices
   const auto links{allocator.parseRobotDescription(this, control_frame)};
@@ -65,7 +73,18 @@ void ThrusterManagerNode::solve(const Wrench &wrench)
   F(4) = wrench.torque.y;
   F(5) = wrench.torque.z;
 
-  const auto thrusts{allocator.solveWrench(F)};
+  const auto thrusts{priority_allocation ? allocator.solveWrenchPrioritized(F)
+                                         : allocator.solveWrench(F)};
+
+  if(priority_allocation)
+  {
+    const auto &scales{allocator.tierScales()};
+    if(*std::min_element(scales.begin(), scales.end()) < 0.999)
+      RCLCPP_WARN_THROTTLE(get_logger(), *get_clock(), 2000,
+                           "thruster saturation - tier scales: heave %.2f, roll/pitch %.2f, "
+                           "yaw %.2f, surge/sway %.2f",
+                           scales[0], scales[1], scales[2], scales[3]);
+  }
 
   if(cmd_js_pub)
   {

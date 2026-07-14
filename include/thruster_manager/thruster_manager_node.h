@@ -23,6 +23,7 @@ private:
 
   ThrusterManager allocator;
   size_t dofs;
+  bool priority_allocation{false};
 
   rclcpp::SubscriptionBase::SharedPtr wrench_sub;
   void solve(const Wrench &wrench);

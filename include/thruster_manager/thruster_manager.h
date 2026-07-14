@@ -5,6 +5,7 @@
 #include <rclcpp_lifecycle/lifecycle_node.hpp>
 #include <geometry_msgs/msg/wrench_stamped.hpp>
 #include <thruster_manager/thruster_link.h>
+#include <thruster_manager/priority_allocation.h>
 #include <tf2_ros/buffer.h>
 #include <tf2_ros/transform_listener.h>
 #include <Eigen/Core>
@@ -108,6 +109,17 @@ public:
 
   Eigen::VectorXd solveWrench(const Vector6d &wrench);
 
+  /// Priority-tiered allocation (heave > roll/pitch > yaw > surge/sway): each
+  /// tier is attenuated uniformly to the per-thruster headroom left by higher
+  /// tiers, so saturation costs surge before depth or attitude and never
+  /// distorts a tier's direction. NOTE: deadzone/kernel adjustment is not
+  /// applied in this mode (run it with tam.deadzone = 0).
+  Eigen::VectorXd solveWrenchPrioritized(const Vector6d &wrench);
+
+  /// applied fraction per tier from the last solveWrenchPrioritized call
+  /// (1 = unsaturated), tiers = {heave, roll+pitch, yaw, surge+sway}
+  inline const std::array<double, 4> &tierScales() const {return tier_scales;}
+
   // compute the max components of the wrench, assuming min/max thrust are non-0
   // useful for anti-windup in higher-level control
   Vector6d maxWrench() const;
@@ -120,6 +132,9 @@ private:
 
   // thruster constraints
   double fmin{0}, fmax{0}, deadzone{0}, cont_weight{0.1};
+
+  // per-tier attenuation from the last prioritized solve
+  std::array<double, 4> tier_scales{1., 1., 1., 1.};
 
   // scale this vector to [fmin,fmax]
   inline void scale(Eigen::VectorXd &thrust, bool ensure_deadzone = false) const;

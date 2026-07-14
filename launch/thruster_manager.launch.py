@@ -15,6 +15,13 @@ thruster_manager_params = {
     ],
     "tam.min_thrust": -4.0,
     "tam.max_thrust": 4.0,
+    # T200 @ 16 V actual limits are asymmetric: fwd 51.6 N / rev 40.0 N.
+    # For competition power:
+    #   "tam.min_thrust": -40.0,
+    #   "tam.max_thrust": 51.6,
+    # Priority-tiered saturation (heave > roll/pitch > yaw > surge/sway);
+    # under saturation the sub gives up surge before depth or attitude:
+    #   "priority_allocation": True,
     "control_frame": "barracuda/base_link",
 }
 # create thruster_manager node

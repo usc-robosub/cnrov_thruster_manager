@@ -63,4 +63,10 @@ ament_export_libraries(thruster_manager)
 ament_export_include_directories(include)
 ament_export_dependencies(rclcpp_lifecycle rclcpp_components)
 
+if(BUILD_TESTING)
+  find_package(ament_cmake_gtest REQUIRED)
+  ament_add_gtest(test_priority_allocation test/test_priority_allocation.cpp)
+  target_include_directories(test_priority_allocation PRIVATE include ${EIGEN3_INCLUDE_DIRS})
+endif()
+
 ament_package()
