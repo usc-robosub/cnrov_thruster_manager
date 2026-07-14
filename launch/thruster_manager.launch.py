@@ -13,12 +13,9 @@ thruster_manager_params = {
         "barracuda/thruster_6_joint",
         "barracuda/thruster_7_joint",
     ],
-    "tam.min_thrust": -4.0,
-    "tam.max_thrust": 4.0,
-    # T200 @ 16 V actual limits are asymmetric: fwd 51.6 N / rev 40.0 N.
-    # For competition power:
-    #   "tam.min_thrust": -40.0,
-    #   "tam.max_thrust": 51.6,
+    # 80% of the 30 A board budget per EE (~6 A/thruster); do not raise without EE.
+    "tam.min_thrust": -15.0,
+    "tam.max_thrust": 20.0,
     # Priority-tiered saturation (heave > roll/pitch > yaw > surge/sway);
     # under saturation the sub gives up surge before depth or attitude:
     #   "priority_allocation": True,
